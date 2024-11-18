@@ -11,6 +11,7 @@ public class Settings : MonoBehaviour
     public Toggle invertPanX;
     public Toggle invertPanY;
     public Toggle useEffects;
+    public SliderManager searchSpeed;
 
     void Start()
     {
@@ -20,10 +21,6 @@ public class Settings : MonoBehaviour
         invertPanX.onValueChanged.AddListener((value) => Director.Instance.invertPanX = value);
         invertPanY.onValueChanged.AddListener((value) => Director.Instance.invertPanY = value);
         useEffects.onValueChanged.AddListener((value) => Director.Instance.useEffects = value);
-    }
-
-    void Update()
-    {
-        
+        searchSpeed.mainSlider.onValueChanged.AddListener((value) => Director.Instance.searchSpeed = value);
     }
 }

@@ -1,14 +1,15 @@
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
 
 public enum StateView
 {
     Normal,
     Hover,
     Selected,
-    Disabled
+    Visited,
+    Disabled,
+    Visiting,
+    Path
 }
 
 public class State : MonoBehaviour
@@ -28,11 +29,17 @@ public class State : MonoBehaviour
         }
     }
 
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+
     private MeshRenderer meshRenderer;
     private Material normalMaterial;
     private Material hoverMaterial;
     private Material selectedMaterial;
     private Material disabledMaterial;
+    private Material visitedMaterial;
+    private Material pathMaterial;
+    private Material visitingMaterial;
 
     private StateView view;
     private const string normalMaterialPath = "Materials/";
@@ -64,6 +71,15 @@ public class State : MonoBehaviour
                 case StateView.Disabled:
                     GetComponent<Renderer>().material = disabledMaterial;
                     break;
+                case StateView.Visited:
+                    GetComponent<Renderer>().material = visitedMaterial;
+                    break;
+                case StateView.Visiting:
+                    GetComponent<Renderer>().material = visitingMaterial;
+                    break;
+                case StateView.Path:
+                    GetComponent<Renderer>().material = pathMaterial;
+                    break;
             }
         }
     }
@@ -77,6 +93,9 @@ public class State : MonoBehaviour
         selectedMaterial = Resources.Load<Material>(normalMaterialPath + "Selected");
         hoverMaterial = Resources.Load<Material>(normalMaterialPath + "Hover");
         disabledMaterial = Resources.Load<Material>(normalMaterialPath + "Disabled");
+        visitedMaterial = Resources.Load<Material>(normalMaterialPath + "Visited");
+        visitingMaterial = Resources.Load<Material>(normalMaterialPath + "Visiting");
+        pathMaterial = Resources.Load<Material>(normalMaterialPath + "Path");
 
         GetComponent<Renderer>().material = normalMaterial;
 
@@ -92,6 +111,18 @@ public class State : MonoBehaviour
 
     void Update()
     {
+        // Si el estado es parte del camino o está siendo visitado, no cambiar su visualización
+        if (View == StateView.Path || View == StateView.Visited || View == StateView.Visiting)
+        {
+            return;
+        }
+
+        if (Director.Instance.map.finding)
+        {
+            View = StateView.Disabled;
+            return;
+        }
+
         if (Director.Instance.map.From == this || Director.Instance.map.To == this)
         {
             View = StateView.Selected;
@@ -118,12 +149,10 @@ public class State : MonoBehaviour
                     {
                         Director.Instance.map.Current = this;
                     }
-                }
-                else
-                {
-                    View = StateView.Normal;
+                    return;
                 }
             }
         }
+        View = StateView.Normal;
     }
 }

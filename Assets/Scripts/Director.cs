@@ -1,13 +1,10 @@
 using Michsky.MUIP;
-using NUnit.Framework;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+using System;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.PostProcessing;
-using UnityEngine.UI;
 
 public class Director : MonoBehaviour
 {
@@ -17,9 +14,15 @@ public class Director : MonoBehaviour
     public Map map;
     public Settings settings;
     public Menu menu;
+    public Credits credits;
 
     [Header("UI Elements")]
     public WindowManager wm;
+    [SerializeField] private ButtonManager closeAppBtn;
+    [SerializeField] private ModalWindowManager resultsMW;
+    [SerializeField] private ModalWindowManager progressVM;
+    [SerializeField] private TMP_Text progressTxt;
+    [SerializeField] private NotificationManager notificationNF;
 
     private int lastIndex;
 
@@ -31,6 +34,48 @@ public class Director : MonoBehaviour
     {
         get { return volume.enabled; }
         set { volume.enabled = value; }
+    }
+    public float searchSpeed = 0.5f;
+
+    public bool ShowResults
+    {
+        get { return resultsMW.isActiveAndEnabled; }
+        set
+        {
+            if (value)
+                resultsMW.Open();
+            else
+                resultsMW.Close();
+        }
+    }
+    public bool ShowProgress
+    {
+        get { return progressVM.isActiveAndEnabled; }
+        set
+        {
+            if (value)
+                progressVM.Open();
+            else
+                progressVM.Close();
+        }
+    }
+
+    public string ProgressText
+    {
+        get { return progressTxt.text; }
+        set { progressTxt.text = value; }
+    }
+
+    public bool ShowNotification
+    {
+        get { return notificationNF.isActiveAndEnabled; }
+        set
+        {
+            if (value)
+                notificationNF.Open();
+            else
+                notificationNF.Close();
+        }
     }
 
     void Awake()
@@ -53,6 +98,42 @@ public class Director : MonoBehaviour
     void Update()
     {
         currentWindow = wm.windows[wm.currentWindowIndex];
+    }
+
+    public void Result(string title, string content)
+    {
+        resultsMW.titleText = title;
+        resultsMW.descriptionText = content;
+        resultsMW.UpdateUI();
+        resultsMW.Open();
+    }
+
+    public void Notify(string title, string content, float time = 3)
+    {
+        notificationNF.title = title;
+        notificationNF.description = content;
+        notificationNF.timer = time;
+        notificationNF.UpdateUI();
+        notificationNF.Open();
+    }
+
+    public async Task Load(Func<IProgress<string>, Task> action)
+    {
+        ShowProgress = true;
+        var progress = new Progress<string>(content =>
+        {
+            ProgressText = content;
+        });
+
+        try
+        {
+            await action(progress);
+        }
+        catch {}
+        finally
+        {
+            ShowProgress = false;
+        }
     }
 
     public void onSettings(InputAction.CallbackContext ctx)
